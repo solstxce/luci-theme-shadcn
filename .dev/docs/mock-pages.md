@@ -30,4 +30,4 @@ Mirror an app's own css/js under `.dev/mocks/static/` following its URL (e.g. `.
 
 ## No auth, no runtime
 
-LuCI's runtime scripts (`luci.js`/`cbi.js`/`xhr.js`, `/cgi-bin/` endpoints) are stripped and `L`/`LuCI`/`XHR` stubbed, or LuCI would boot, poll, 403 and pop "Session expired". Framework-dependent theme JS (`menu-shadcn`, `sidebar-shadcn`) therefore no-ops — the captured DOM is already rendered, so the page still looks right; the theme's own inline scripts (dark mode, sidebar cache replay) still run.
+LuCI's runtime scripts (`luci.js`/`cbi.js`/`xhr.js`, `/cgi-bin/` endpoints) are stripped and `L`/`LuCI`/`XHR` stubbed, or LuCI would boot, poll, 403 and pop "Session expired". Framework-dependent theme JS (`menu-shadcn`, `sidebar-shadcn`) therefore no-ops — the captured DOM is already rendered, so the page still looks right; the theme's own inline scripts (dark mode) still run.

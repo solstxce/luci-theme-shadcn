@@ -414,12 +414,10 @@ handler in order:
    page-scoped CSS.
 4. **Chrome.** `menu-shadcn.js` exposes `syncRoute()`: it re-marks the
    sidebar's `.active` item/sub-item/logout from `L.env.dispatchpath` with
-   the same longest-link-prefix rule header.ut's pre-paint replay uses on
-   the cached markup, opens the active accordion group and closes the rest
+   the longest matching link path, opens the active accordion group and closes the rest
    (unless the sidebar is collapsed to its icon rail), rebuilds the topbar
-   breadcrumb and re-renders `#tabmenu` for the new section. The sidebar is
-   **not** rebuilt — its DOM, delegated listeners and the sessionStorage
-   cache taken on `pagehide` all keep working — only its state changes.
+   breadcrumb and re-renders `#tabmenu` for the new section. The sidebar DOM and
+   delegated listeners stay in place during the swap.
    `closeSurfaces()` (teardown) closes the palette, the mobile drawer and
    the collapsed-rail popover.
 5. **Staging.** A fresh `<div id="view" class="view-staging">` is inserted

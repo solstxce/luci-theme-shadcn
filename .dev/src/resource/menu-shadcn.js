@@ -31,9 +31,6 @@ const ICON_MAP = {
   default: "layout-dashboard",
 };
 
-/** sessionStorage key replayed pre-paint by the inline script in header.ut */
-const CACHE_KEY = "shadcn.sidebar.cache";
-
 /** localStorage key for the palette's most-recently-used page paths */
 const RECENTS_KEY = "shadcn.palette.recents";
 
@@ -44,36 +41,7 @@ return baseclass.extend({
     this.renderSidebarChrome();
     this.initUciIndicator();
     document.dispatchEvent(new Event("shadcn-sidebar-ready"));
-    ui.menu.load().then((tree) => {
-      this.render(tree);
-      this.cacheSidebar();
-      window.addEventListener("pagehide", () => this.cacheSidebar());
-    });
-  },
-
-  /**
-   * Snapshot the rendered sidebar so header.ut can replay it in the first
-   * frame of the next navigation (pagehide keeps accordion/scroll current).
-   */
-  cacheSidebar() {
-    // Set by header.ut's delegated logout-click listener.
-    if (window.shadcnSuppressSidebarCache) return;
-    const sidebar = document.getElementById("sidebar");
-    const nav = document.getElementById("sidebar-nav");
-    if (!sidebar || !nav) return;
-    try {
-      sessionStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({
-          v: 2,
-          stamp: document.body.dataset.navStamp,
-          html: sidebar.innerHTML,
-          scroll: nav.scrollTop || 0,
-        }),
-      );
-    } catch (e) {
-      /* storage full/disabled — next page just builds normally */
-    }
+    ui.menu.load().then((tree) => this.render(tree));
   },
 
   _mediaBase() {
@@ -231,9 +199,7 @@ return baseclass.extend({
   },
 
   // Re-marks the sidebar, crumb and tabs from L.env after a same-document
-  // navigation (router-shadcn.js). The sidebar keeps its DOM; only the
-  // active highlight moves — the same longest-link-prefix rule header.ut's
-  // pre-paint replay applies to the cached markup.
+  // navigation (router-shadcn.js). The sidebar keeps its DOM and updates the active item.
   syncRoute() {
     if (!this.tree) return;
 
@@ -308,21 +274,6 @@ return baseclass.extend({
 
     const children = ui.menu.getChildren(branch);
     const dp = L.env.dispatchpath || [];
-
-    // If header.ut replayed the cached sidebar, this rebuild is a silent
-    // refresh — keep the user's accordion/scroll state instead of resetting
-    // to the default (active section open, scrolled to top).
-    const restored =
-      document
-        .getElementById("sidebar")
-        ?.getAttribute("data-shadcn-restored") === "1";
-    const openSections = restored
-      ? Array.from(
-          nav.querySelectorAll('.sidebar-accordion-item[data-open="true"]'),
-          (el) => el.getAttribute("data-section"),
-        )
-      : null;
-    const savedScrollTop = restored ? nav.scrollTop : 0;
 
     nav.innerHTML = "";
     if (foot) {
@@ -451,18 +402,6 @@ return baseclass.extend({
 
       nav.appendChild(item);
     });
-
-    if (restored) {
-      nav.querySelectorAll(".sidebar-accordion-item").forEach((item) => {
-        item.setAttribute(
-          "data-open",
-          openSections.includes(item.getAttribute("data-section"))
-            ? "true"
-            : "false",
-        );
-      });
-      nav.scrollTop = savedScrollTop;
-    }
   },
 
   /**
@@ -912,16 +851,7 @@ return baseclass.extend({
           : "",
       ],
     );
-    if (page.isLogout)
-      row.addEventListener("click", () => {
-        // Same contract as header.ut's delegated a.sidebar-logout listener:
-        // logging out drops the cached sidebar and suppresses re-caching.
-        window.shadcnSuppressSidebarCache = true;
-        try {
-          sessionStorage.removeItem("shadcn.sidebar.cache");
-        } catch (e) {}
-      });
-    else
+    if (!page.isLogout)
       // Remember the pick, then let the click navigate (router or full
       // load) untouched.
       row.addEventListener("click", () => this._palRecordRecent(page.path));

@@ -51,7 +51,6 @@ test("sidebar chrome and controls are ready while the menu request is pending", 
   menu.renderSidebarChrome = () => calls.push("chrome");
   menu.initUciIndicator = () => calls.push("indicator");
   menu.render = (tree) => calls.push(tree);
-  menu.cacheSidebar = () => calls.push("cache");
   menu.__init__();
   assert.deepEqual(calls, ["chrome", "indicator", "shadcn-sidebar-ready"]);
   const tree = { children: {} };
@@ -62,8 +61,6 @@ test("sidebar chrome and controls are ready while the menu request is pending", 
     "indicator",
     "shadcn-sidebar-ready",
     tree,
-    "cache",
-    "pagehide",
   ]);
 });
 
@@ -71,59 +68,11 @@ const header = readFileSync(
   new URL("../../ucode/template/themes/shadcn/header.ut", import.meta.url),
   "utf8",
 );
-const replay = [...header.matchAll(/<script>([\s\S]*?)<\/script>/g)]
-  .map((match) => match[1])
-  .find((script) => script.includes("Pre-paint sidebar restore"));
-
-function restore({
-  stamp = "lang:user:session:version",
-  cachedStamp = stamp,
-  menu = {},
-  version = 2,
-} = {}) {
-  const sidebar = {
-    innerHTML: "",
-    setAttribute() {},
-    querySelectorAll: () => [],
-    querySelector: () => null,
-  };
-  const store = {
-    "shadcn.sidebar.cache": JSON.stringify({
-      v: version,
-      stamp: cachedStamp,
-      html: "<nav>cached</nav>",
-    }),
-    "luci-session-store": JSON.stringify({ session: { menu } }),
-  };
-  new Function("document", "sessionStorage", "location", "window", replay)(
-    {
-      addEventListener() {},
-      getElementById: () => sidebar,
-      body: { dataset: { navStamp: stamp } },
-    },
-    {
-      getItem: (key) => store[key] || null,
-      removeItem: (key) => delete store[key],
-    },
-    { pathname: "/cgi-bin/luci/admin/status/overview" },
-    {},
+test("sidebar rendering keeps the authentication session out of browser storage", () => {
+  assert.doesNotMatch(header, /data-nav-stamp|cache\.html/);
+  assert.doesNotMatch(menuSource, /navStamp|sessionStorage\.setItem/);
+  assert.match(
+    header,
+    /sessionStorage\.removeItem\('shadcn\.sidebar\.cache'\)/,
   );
-  return sidebar.innerHTML;
-}
-
-test("pre-paint sidebar cache survives within the same active session", () => {
-  assert.equal(restore(), "<nav>cached</nav>");
-});
-
-test("pre-paint sidebar cache is invalidated by identity, version and LuCI menu flush", () => {
-  for (const options of [
-    { cachedStamp: "lang:other:session:version" },
-    { cachedStamp: "lang:user:old-session:version" },
-    { cachedStamp: "lang:user:session:old-version" },
-    { cachedStamp: "other-lang:user:session:version" },
-    { menu: null },
-    { version: 1 },
-  ])
-    assert.equal(restore(options), "", JSON.stringify(options));
-  assert.match(header, /ctx\?\.authsession/);
 });

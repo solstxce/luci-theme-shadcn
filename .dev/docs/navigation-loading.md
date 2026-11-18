@@ -10,10 +10,6 @@ The header retains LuCI's standard translation script before `cbi.js`.
 The optional catalog-directory probe was removed to keep template logic small
 and avoid maintaining a separate decision about whether translations exist.
 
-The pre-paint menu snapshot is scoped to language, user, session and theme
-asset version. It is not reused after `ui.menu.flushCache()` invalidates the
-LuCI session's menu. Logging out or returning to login clears the snapshot.
-
 ## Shared runtime integration
 
 The theme pins `@eamonxg/luci-theme-devkit` to the published npm version
