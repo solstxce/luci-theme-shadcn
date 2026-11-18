@@ -1,8 +1,15 @@
 .cbi-progressbar {
-  @apply bg-secondary relative h-2.5 w-full cursor-help overflow-hidden rounded-full;
-  @apply before:text-foreground before:absolute before:inset-x-0 before:top-1/2 before:-translate-y-1/2 before:text-center before:text-[10px] before:leading-none before:whitespace-nowrap before:content-[attr(title)];
+  @apply relative w-full cursor-help;
+
+  &[title]::before {
+    @apply mb-1 block text-xs font-medium whitespace-normal tabular-nums content-[attr(title)];
+  }
+
+  &::after {
+    @apply bg-secondary absolute inset-x-0 bottom-0 h-2.5 rounded-full content-[''];
+  }
 
   > div {
-    @apply from-progress-bar-start to-progress-bar-end h-full bg-gradient-to-r [transition:width_.3s];
+    @apply bg-primary relative z-1 h-2.5 max-w-full rounded-full [transition:width_.3s] motion-reduce:transition-none;
   }
 }
